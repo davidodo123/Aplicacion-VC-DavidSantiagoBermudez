@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title','Nuevo alumno')
+@section('title','Nuevo CV')
 
 @section('content')
 <h3>Nuevo alumno</h3>
@@ -15,6 +15,8 @@
 @endif
 
 <form method="POST" action="{{ route('alumnos.store') }}" enctype="multipart/form-data">
-  @include('alumnos._form')
+  @csrf
+  @include('alumnos.form') 
 </form>
+
 @endsection

@@ -15,7 +15,10 @@
 @endif
 
 <form method="POST" action="{{ route('alumnos.update', $alumno) }}" enctype="multipart/form-data">
+  @csrf
   @method('PUT')
-  @include('alumnos._form', ['alumno' => $alumno])
+  @include('alumnos.form')
 </form>
+
+
 @endsection
