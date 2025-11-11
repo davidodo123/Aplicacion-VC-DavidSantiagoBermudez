@@ -1,59 +1,66 @@
-@extends('layouts.app')
-@section('title', $alumno->nombre)
+@extends('template.base')
 
 @section('content')
-<div class="row g-4">
-  <div class="col-md-4">
-    @if($alumno->fotografia)
-      <img
-        src="{{ asset(str_starts_with($alumno->fotografia, 'assets/')
-                ? $alumno->fotografia
-                : 'assets/img/'.$alumno->fotografia) }}"
-        alt="Foto de {{ $alumno->nombre }}"
-        class="img-fluid rounded"
-        style="height:260px;object-fit:cover;width:100%;">
-    @else
-      <div class="bg-light rounded" style="height:260px;"></div>
-    @endif
+<article class="resume-wrapper text-center position-relative">
+  <div class="resume-wrapper-inner mx-auto text-start bg-white shadow-lg">
+    <header class="resume-header pt-4 pt-md-0">
+      <div class="row">
+        <div class="col-block col-md-auto resume-picture-holder text-center text-md-start">
+          <img
+  src="{{ $alumno->fotografia ? route('alumnos.foto', $alumno) : asset('assets/img/sin-foto.webp') }}"
+  alt="Foto de {{ $alumno->nombre }}"
+  style="width:120px; height:120px; object-fit:cover; border-radius:10px;"
+  onerror="this.src='{{ asset('assets/img/cadae4ab-2f27-4a33-8077-522fb1fdb34c.png') }}';">
+
+
+        </div>
+        <div class="col">
+          <div class="row p-4 justify-content-center justify-content-md-between">
+            <div class="primary-info col-auto">
+              <h1 class="name mt-0 mb-1 text-black text-uppercase">
+                {{ $alumno->nombre }} {{ $alumno->apellidos }}
+              </h1>
+              <div class="title mb-3">Nota Media: {{ $alumno->nota_media }}</div>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="far fa-envelope fa-fw me-2"></i>{{ $alumno->correo }}</li>
+                <li><i class="fas fa-mobile-alt fa-fw me-2"></i>{{ $alumno->telefono }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="resume-body p-5">
+      <section class="resume-section summary-section mb-5">
+        <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Experiencia</h2>
+        <div class="resume-section-content">
+          <p class="mb-0">{{ $alumno->experiencia }}</p>
+        </div>
+      </section>
+
+      <div class="row">
+        <div class="col-lg-9">
+          <section class="resume-section experience-section mb-5">
+            <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Formación</h2>
+            <div class="resume-section-content">
+              <p class="mb-0">{{ $alumno->formacion }}</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-9">
+          <section class="resume-section experience-section mb-5">
+            <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Habilidades</h2>
+            <div class="resume-section-content">
+              <p class="mb-0">{{ $alumno->habilidades }}</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <div class="col-md-8">
-    <h3 class="mb-3">{{ $alumno->nombre }} {{ $alumno->apellidos }}</h3>
-
-    <dl class="row">
-      <dt class="col-sm-4">Correo</dt>
-      <dd class="col-sm-8">{{ $alumno->correo }}</dd>
-
-      <dt class="col-sm-4">Teléfono</dt>
-      <dd class="col-sm-8">{{ $alumno->telefono ?? '—' }}</dd>
-
-      <dt class="col-sm-4">Fecha nacimiento</dt>
-      <dd class="col-sm-8">{{ $alumno->fecha_nacimiento ?? '—' }}</dd>
-
-      <dt class="col-sm-4">Nota media</dt>
-      <dd class="col-sm-8">{{ $alumno->nota_media ?? '—' }}</dd>
-
-      <dt class="col-sm-4">Experiencia</dt>
-      <dd class="col-sm-8">{{ $alumno->experiencia ?? '—' }}</dd>
-
-      <dt class="col-sm-4">Formación</dt>
-      <dd class="col-sm-8">{{ $alumno->formacion ?? '—' }}</dd>
-
-      <dt class="col-sm-4">Habilidades</dt>
-      <dd class="col-sm-8">{{ $alumno->habilidades ?? '—' }}</dd>
-    </dl>
-
-    <a href="{{ route('alumnos.edit', $alumno) }}" class="btn btn-primary me-2">Edit</a>
-
-    <form action="{{ route('alumnos.destroy', $alumno) }}"
-          method="POST" class="d-inline"
-          onsubmit="return confirm('¿Seguro que quieres eliminar este CV? Esta acción no se puede deshacer.');">
-      @csrf
-      @method('DELETE')
-      <button type="submit" class="btn btn-danger">Delete</button>
-    </form>
-
-    <a href="{{ route('alumnos.index') }}" class="btn btn-link ms-2">Volver</a>
-  </div>
-</div>
+</article>
 @endsection

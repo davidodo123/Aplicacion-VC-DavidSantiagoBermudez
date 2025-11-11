@@ -1,45 +1,93 @@
-@extends('layouts.app')
-@section('title','Listado de CVs')
+@extends('template.base')
 
 @section('content')
-<div class="row g-4">
-  @forelse($alumnos as $a)
-  <div class="col-12 col-md-6 col-lg-4">
-    <div class="card h-100">
-      @if($a->fotografia)
-  <img
-  src="{{ asset('assets/img/' . $a->fotografia) }}"
-  class="card-img-top"
-  alt="Foto de {{ $a->nombre }}"
-  style="height:160px;object-fit:cover;"
->
-
-@else
-  <div class="card-img-top bg-light" style="height:160px;"></div>
-@endif
-      <div class="card-body">
-        <h5 class="card-title">{{ $a->nombre }} {{ $a->apellidos }}</h5>
-        <p class="card-text small text-muted mb-2">Experiencia: {{ $a->experiencia ?? '-' }}</p>
-        <p class="card-text" style="max-height:3.5rem;overflow:hidden;">
-          {{ Str::limit($a->experiencia, 120) }}
-        </p>
-        <a href="{{ route('alumnos.show',$a) }}" class="btn btn-outline-primary btn-sm">View</a>
-        <a href="{{ route('alumnos.edit',$a) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
-        <form action="{{ route('alumnos.destroy', $a) }}"
-      method="POST" class="d-inline"
-      onsubmit="return confirm('¿Seguro que quieres eliminar este CV? Esta acción no se puede deshacer.');">
-  @csrf
-  @method('DELETE')
-  <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-</form>
-
+  {{-- Modal de confirmación --}}
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">Borrando alumno</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-    </div>
+      <div class="modal-body">Vas a eliminar este alumno, ¿seguro?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" data-bs-dismiss="modal">Cerrar</button>
+        <button form="form-delete" type="submit" class="btn btn-danger">Eliminar</button>
+      </div>
+    </div></div>
   </div>
-  @empty
-    <p style="color: black;">No hay alumnos.</p>
-  @endforelse
-</div>
 
-<div class="mt-4">{{ $alumnos->links() }}</div>
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr class="text-center">
+        <th>#</th>
+        <th>Foto</th>
+        <th>Nombre completo</th>
+        <th>Nota media</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @forelse($alumnos as $alumno)
+        <tr class="text-center">
+          <td>{{ $alumno->id }}</td>
+
+          <td>
+            <img
+              src="{{ $alumno->fotografia ? route('alumnos.foto', $alumno) : asset('assets/img/sin-foto.webp') }}"
+              alt="Foto de {{ $alumno->nombre }}"
+              style="width:50px;height:50px;border-radius:10px;object-fit:cover;">
+          </td>
+
+          <td>{{ $alumno->nombre }} {{ $alumno->apellidos }}<br>
+              <small class="text-muted">{{ $alumno->correo }} · {{ $alumno->telefono }}</small>
+          </td>
+
+          <td>{{ $alumno->nota_media }}</td>
+
+          <td>
+            <a href="{{ route('alumnos.show', $alumno) }}" class="btn btn-outline-success btn-sm">Ver</a>
+            <a href="{{ route('alumnos.edit', $alumno) }}" class="btn btn-outline-info btn-sm">Editar</a>
+            <a  data-href="{{ route('alumnos.destroy', $alumno) }}"
+                class="btn btn-outline-danger btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal">
+              Eliminar
+            </a>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="5" class="text-center text-muted">No hay alumnos registrados.</td>
+        </tr>
+      @endforelse
+    </tbody>
+
+    <tfoot>
+      <tr>
+        <th colspan="3">Total de alumnos:</th>
+        <th class="text-end">{{ count($alumnos) }}</th>
+        <th></th>
+      </tr>
+    </tfoot>
+  </table>
+
+  {{-- Formulario invisible para enviar el DELETE --}}
+  <form id="form-delete" action="" method="post">
+    @csrf
+    @method('DELETE')
+  </form>
+@endsection
+
+@section('scripts')
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const formDelete = document.getElementById('form-delete');
+      document.querySelectorAll('[data-bs-target="#deleteModal"]').forEach(btn => {
+        btn.addEventListener('click', function () {
+          formDelete.action = this.getAttribute('data-href');
+        });
+      });
+    });
+  </script>
 @endsection
