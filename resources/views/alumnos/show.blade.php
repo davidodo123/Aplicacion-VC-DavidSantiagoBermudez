@@ -1,66 +1,70 @@
 @extends('template.base')
 
 @section('content')
-<article class="resume-wrapper text-center position-relative">
-  <div class="resume-wrapper-inner mx-auto text-start bg-white shadow-lg">
-    <header class="resume-header pt-4 pt-md-0">
-      <div class="row">
-        <div class="col-block col-md-auto resume-picture-holder text-center text-md-start">
-          <img
-  src="{{ $alumno->fotografia ? route('alumnos.foto', $alumno) : asset('assets/img/sin-foto.webp') }}"
-  alt="Foto de {{ $alumno->nombre }}"
-  style="width:120px; height:120px; object-fit:cover; border-radius:10px;"
-  onerror="this.src='{{ asset('assets/img/cadae4ab-2f27-4a33-8077-522fb1fdb34c.png') }}';">
-
-
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">{{ $alumno->nombre }} {{ $alumno->apellidos }}</h3>
+            <a href="{{ route('alumnos.index') }}" class="btn btn-outline-light btn-sm">Volver</a>
         </div>
-        <div class="col">
-          <div class="row p-4 justify-content-center justify-content-md-between">
-            <div class="primary-info col-auto">
-              <h1 class="name mt-0 mb-1 text-black text-uppercase">
-                {{ $alumno->nombre }} {{ $alumno->apellidos }}
-              </h1>
-              <div class="title mb-3">Nota Media: {{ $alumno->nota_media }}</div>
-              <ul class="list-unstyled">
-                <li class="mb-2"><i class="far fa-envelope fa-fw me-2"></i>{{ $alumno->correo }}</li>
-                <li><i class="fas fa-mobile-alt fa-fw me-2"></i>{{ $alumno->telefono }}</li>
-              </ul>
+
+        <div class="card-body">
+            <div class="row align-items-start">
+                <!-- Imagen -->
+                <div class="col-md-3 text-center mb-4">
+                    <img 
+                        src="{{ $alumno->fotografia ? asset($alumno->fotografia) : asset('assets/img/sin-foto.webp') }}"
+                        alt="Foto de {{ $alumno->nombre }}"
+                        class="img-thumbnail"
+                        style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px;"
+                        onerror="this.src='{{ asset('assets/img/sin-foto.webp') }}';">
+                </div>
+
+                <!-- Información personal -->
+                <div class="col-md-9">
+                    <h5 class="fw-bold">Información personal</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Nombre:</strong> {{ $alumno->nombre }}</li>
+                        <li><strong>Apellidos:</strong> {{ $alumno->apellidos }}</li>
+                        <li><strong>Teléfono:</strong> {{ $alumno->telefono }}</li>
+                        <li><strong>Correo electrónico:</strong> {{ $alumno->correo }}</li>
+                        <li><strong>Fecha de nacimiento:</strong> 
+                            {{ \Carbon\Carbon::parse($alumno->fecha_nacimiento)->format('d/m/Y') }}
+                        </li>
+                        <li><strong>Nota media:</strong> {{ $alumno->nota_media }}</li>
+                    </ul>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </header>
 
-    <div class="resume-body p-5">
-      <section class="resume-section summary-section mb-5">
-        <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Experiencia</h2>
-        <div class="resume-section-content">
-          <p class="mb-0">{{ $alumno->experiencia }}</p>
-        </div>
-      </section>
+            <hr>
 
-      <div class="row">
-        <div class="col-lg-9">
-          <section class="resume-section experience-section mb-5">
-            <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Formación</h2>
-            <div class="resume-section-content">
-              <p class="mb-0">{{ $alumno->formacion }}</p>
+            <!-- Experiencia -->
+            <div class="mb-4">
+                <h5 class="fw-bold">Experiencia</h5>
+                <p>{{ $alumno->experiencia ? $alumno->experiencia : 'No especificada.' }}</p>
             </div>
-          </section>
-        </div>
-      </div>
 
-      <div class="row">
-        <div class="col-lg-9">
-          <section class="resume-section experience-section mb-5">
-            <h2 class="resume-section-title text-uppercase font-weight-bold pb-3 mb-3">Habilidades</h2>
-            <div class="resume-section-content">
-              <p class="mb-0">{{ $alumno->habilidades }}</p>
+            <!-- Formación -->
+            <div class="mb-4">
+                <h5 class="fw-bold">Formación</h5>
+                <p>{{ $alumno->formacion ? $alumno->formacion : 'No especificada.' }}</p>
             </div>
-          </section>
+
+            <!-- Habilidades -->
+            <div class="mb-4">
+                <h5 class="fw-bold">Habilidades</h5>
+                <p>{{ $alumno->habilidades ? $alumno->habilidades : 'No especificadas.' }}</p>
+            </div>
         </div>
-      </div>
+
+        <div class="card-footer text-end">
+            <a href="{{ route('alumnos.edit', $alumno) }}" class="btn btn-primary">Editar</a>
+            <form action="{{ route('alumnos.destroy', $alumno) }}" method="POST" class="d-inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Seguro que deseas eliminar este alumno?')">Eliminar</button>
+            </form>
+        </div>
     </div>
-  </div>
-</article>
+</div>
 @endsection

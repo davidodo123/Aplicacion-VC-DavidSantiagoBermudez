@@ -21,6 +21,7 @@ return new class extends Migration
     $table->text('formacion')->nullable();
     $table->text('habilidades')->nullable();
     $table->string('fotografia')->nullable();
+
     $table->timestamps();
 });
 

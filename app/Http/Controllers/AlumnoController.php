@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Alumno;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use Illuminate\Database\QueryException;
 
 class AlumnoController extends Controller
 {
@@ -24,48 +22,44 @@ class AlumnoController extends Controller
         return view('alumnos.create');
     }
 
-   public function store(Request $request)
-{
-    $data = $request->validate([
-        'nombre'            => 'required|string|max:255',
-        'apellidos'         => 'required|string|max:255',
-        'correo'            => 'required|email|unique:alumnos,correo',
-        'telefono'          => 'nullable|string|max:30',
-        'fecha_nacimiento'  => 'nullable|date',
-        'nota_media'        => 'nullable|numeric|min:0|max:10',
-        'experiencia'       => 'nullable|string',
-        'formacion'         => 'nullable|string',
-        'habilidades'       => 'nullable|string',
-        'fotografia'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nombre'            => 'required|string|max:50',
+            'apellidos'         => 'required|string|max:100',
+            'telefono'          => 'required|string|max:20',
+            'correo'            => 'required|email|max:100|unique:alumnos,correo',
+            'fecha_nacimiento'  => 'required|date',
+            'nota_media'        => 'required|numeric|min:0|max:10',
+            'experiencia'       => 'nullable|string',
+            'formacion'         => 'nullable|string',
+            'habilidades'       => 'nullable|string',
+            'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
-    // 1) Guardar sin la foto para obtener ID
-    $alumno = Alumno::create(collect($data)->except('fotografia')->toArray());
+        try {
+            // Guardar los datos sin la imagen primero
+            $alumno = new Alumno($validated);
+            $alumno->save();
 
-    // 2) Si viene foto, subirla al disco 'private' y guardar la ruta
-    if ($request->hasFile('fotografia')) {
-        $path = $this->upload($request, $alumno->id);   // "images/3.jpg"
-        if ($path) {
-            $alumno->update(['fotografia' => $path]);
+            // Si el usuario subió una imagen
+            if ($request->hasFile('image')) {
+    $file = $request->file('image');
+    $name = uniqid('alumno_') . '.' . $file->getClientOriginalExtension();
+    $file->move(public_path('assets/img'), $name);        // => public/assets/img/...
+    $alumno->fotografia = 'assets/img/' . $name;          // => guarda ruta relativa
+}
+
+
+            return redirect()
+                ->route('alumnos.index')
+                ->with('general', 'Alumno añadido correctamente.');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors([
+                'general' => 'Ocurrió un error al guardar el alumno. Inténtalo de nuevo.'
+            ]);
         }
     }
-
-    return redirect()->route('main.index')->with('general', 'Alumno creado correctamente.');
-}
-
-private function upload(Request $request, int $id): ?string
-{
-    if (!$request->hasFile('fotografia')) return null;
-    $image = $request->file('fotografia');
-    if (!$image->isValid()) return null;
-
-    $fileName = $id . '.' . $image->getClientOriginalExtension();
-    return $image->storeAs('images', $fileName, 'private'); // guarda en storage/app/private/images
-}
-
-
-
-
 
     public function show(Alumno $alumno): View
     {
@@ -78,80 +72,110 @@ private function upload(Request $request, int $id): ?string
         return view('alumnos.edit', compact('alumno'));
     }
 
-   public function update(Request $request, Alumno $alumno)
-{
-    $data = $request->validate([
-        'nombre'            => 'required|string|max:255',
-        'apellidos'         => 'required|string|max:255',
-        'correo'            => 'required|email|unique:alumnos,correo,'.$alumno->id,
-        'telefono'          => 'nullable|string|max:30',
-        'fecha_nacimiento'  => 'nullable|date',
-        'nota_media'        => 'nullable|numeric|min:0|max:10',
-        'experiencia'       => 'nullable|string',
-        'formacion'         => 'nullable|string',
-        'habilidades'       => 'nullable|string',
-        'fotografia'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-        'remove_image'      => 'nullable|in:1',
-    ]);
+    public function update(Request $request, Alumno $alumno): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nombre'            => 'required|string|max:50',
+            'apellidos'         => 'required|string|max:100',
+            'telefono'          => 'required|string|max:20',
+            'correo'            => 'required|email|max:100|unique:alumnos,correo,' . $alumno->id,
+            'fecha_nacimiento'  => 'required|date',
+            'nota_media'        => 'required|numeric|min:0|max:10',
+            'experiencia'       => 'nullable|string',
+            'formacion'         => 'nullable|string',
+            'habilidades'       => 'nullable|string',
+            'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'delete_image'      => 'nullable|in:1',
+        ]);
 
-    // 1) Actualiza campos normales
-    $alumno->update(collect($data)->except(['fotografia','remove_image'])->toArray());
+        try {
+            // Actualizar datos del alumno (excepto la imagen)
+            $alumno->fill(collect($validated)->except(['image', 'delete_image'])->toArray());
+            $alumno->save();
 
-    // 2) Eliminar foto si se marcó
-    if ($request->boolean('remove_image') && $alumno->fotografia) {
-        if (Storage::disk('private')->exists($alumno->fotografia)) {
-            Storage::disk('private')->delete($alumno->fotografia);
+            // Si se marcó eliminar imagen
+            if (($validated['delete_image'] ?? null) === '1') {
+                if ($alumno->fotografia && file_exists(public_path($alumno->fotografia))) {
+                    unlink(public_path($alumno->fotografia));
+                }
+                $alumno->fotografia = null;
+                $alumno->save();
+            }
+
+            // Si se sube una nueva imagen
+            if ($request->hasFile('image')) {
+                // Borramos la anterior si existe
+                if ($alumno->fotografia && file_exists(public_path($alumno->fotografia))) {
+                    unlink(public_path($alumno->fotografia));
+                }
+
+                // Subimos la nueva
+                $path = $this->upload($request, $alumno->id);
+                $alumno->fotografia = $path;
+                $alumno->save();
+            }
+
+            return redirect()
+                ->route('alumnos.index')
+                ->with('general', 'Currículum actualizado correctamente.');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors([
+                'general' => 'Error al actualizar el currículum: ' . $e->getMessage()
+            ]);
         }
-        $alumno->update(['fotografia' => null]);
     }
 
-    // 3) Subir nueva foto (borra la anterior si existe)
-    if ($request->hasFile('fotografia')) {
-        if ($alumno->fotografia && Storage::disk('private')->exists($alumno->fotografia)) {
-            Storage::disk('private')->delete($alumno->fotografia);
-        }
-        $path = $this->upload($request, $alumno->id);   // "images/3.jpg"
-        if ($path) {
-            $alumno->update(['fotografia' => $path]);
+    public function destroy(Alumno $alumno): RedirectResponse
+    {
+        try {
+            if ($alumno->fotografia && Storage::disk('private')->exists($alumno->fotografia)) {
+                Storage::disk('private')->delete($alumno->fotografia);
+            }
+            $alumno->delete();
+            return redirect()->route('alumnos.index')->with('general', 'Se ha eliminado el CV.');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['general' => 'El CV no ha podido borrarse.']);
         }
     }
 
-    return redirect()->route('main.index')->with('general', 'Alumno actualizado correctamente.');
-}
-
-
-   public function destroy(\App\Models\Alumno $alumno)
-{
-    try {
-        if ($alumno->fotografia && \Storage::disk('private')->exists($alumno->fotografia)) {
-            \Storage::disk('private')->delete($alumno->fotografia);
+    /**
+     * Servir la imagen privada del alumno
+     */
+    public function image(Alumno $alumno)
+    {
+        if (!$alumno->fotografia || !Storage::disk('private')->exists($alumno->fotografia)) {
+            abort(404);
         }
 
-        $alumno->delete();
-
-        return redirect()->route('main.index')
-            ->with('general', 'Alumno eliminado correctamente.');
-    } catch (\Throwable $e) {
-        report($e);
-        return back()
-            ->withInput()
-            ->withErrors(['general' => 'No se pudo eliminar: '.$e->getMessage()]);
+        $fullPath = Storage::disk('private')->path($alumno->fotografia);
+        return response()->file($fullPath);
     }
-}
 
 
     /**
-     * Servir imagen privada del alumno
+     * Sube la imagen al disco 'private' y devuelve la ruta relativa
+     * p.ej. alumnos/5.jpg
      */
-public function foto(Alumno $alumno)
-{
-    if (!$alumno->fotografia) abort(404);
-    if (!Storage::disk('private')->exists($alumno->fotografia)) abort(404);
+    private function upload(Request $request, int $alumnoId): ?string
+    {
+        if (!$request->hasFile('image')) {
+            return null;
+        }
 
-    $path = Storage::disk('private')->path($alumno->fotografia);
-    $mime = File::mimeType($path) ?? 'image/jpeg';
-    return response()->file($path, ['Content-Type' => $mime]);
-}
+        $file = $request->file('image');
+        if (!$file->isValid()) {
+            return null;
+        }
 
+        $fileName = 'alumno_' . $alumnoId . '.' . $file->getClientOriginalExtension();
+        $destination = public_path('assets/img');
 
+        if (!file_exists($destination)) {
+            mkdir($destination, 0755, true);
+        }
+
+        $file->move($destination, $fileName);
+
+        return 'assets/img/' . $fileName;
+    }
 }
