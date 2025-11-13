@@ -27,7 +27,7 @@ class AlumnoController extends Controller
     //Creo store donde se almacenará la base de datos
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate([ //sirve para validar automáticamente los datos que llegan desde un formulario antes de guardarlos o actualizarlos en la base de datos
             'nombre'            => 'required|string|max:50',
             'apellidos'         => 'required|string|max:100',
             'telefono'          => 'required|string|max:20',
