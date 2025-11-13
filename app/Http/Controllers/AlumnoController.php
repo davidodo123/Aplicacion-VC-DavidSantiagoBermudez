@@ -11,17 +11,20 @@ use Illuminate\View\View;
 
 class AlumnoController extends Controller
 {
+    //Creo la base del laravel para verlo todo
     public function index(): View
     {
         $alumnos = Alumno::all();
         return view('alumnos.index', compact('alumnos'));
     }
 
+    //Creo create
     public function create(): View
     {
         return view('alumnos.create');
     }
 
+    //Aqui se almacenará la base de datos
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -38,17 +41,17 @@ class AlumnoController extends Controller
         ]);
 
         try {
-            // Guardar los datos sin la imagen primero
+            //Guardar los datos sin la imagen primero
             $alumno = new Alumno($validated);
             $alumno->save();
 
-            // Si el usuario subió una imagen
+            //Si el usuario subió una imagen
             if ($request->hasFile('image')) {
-    $file = $request->file('image');
-    $name = uniqid('alumno_') . '.' . $file->getClientOriginalExtension();
-    $file->move(public_path('assets/img'), $name);        // => public/assets/img/...
-    $alumno->fotografia = 'assets/img/' . $name;          // => guarda ruta relativa
-}
+                $file = $request->file('image');
+                $name = uniqid('alumno_') . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/img'), $name);        
+                $alumno->fotografia = 'assets/img/' . $name;         
+            }
 
 
             return redirect()
@@ -61,20 +64,23 @@ class AlumnoController extends Controller
         }
     }
 
+    //Esto mostrara la parte de menu
     public function show(Alumno $alumno): View
     {
         $year = Carbon::now()->year;
         return view('alumnos.show', compact('alumno', 'year'));
     }
 
+    //Aqui podre editar el CV
     public function edit(Alumno $alumno): View
     {
         return view('alumnos.edit', compact('alumno'));
     }
 
+    //Cuando edite tendre que update el archivo
     public function update(Request $request, Alumno $alumno): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validate([     //Se asegura que todo sta correcto
             'nombre'            => 'required|string|max:50',
             'apellidos'         => 'required|string|max:100',
             'telefono'          => 'required|string|max:20',
@@ -89,11 +95,11 @@ class AlumnoController extends Controller
         ]);
 
         try {
-            // Actualizar datos del alumno (excepto la imagen)
+            //Actualizar datos del alumno
             $alumno->fill(collect($validated)->except(['image', 'delete_image'])->toArray());
             $alumno->save();
 
-            // Si se marcó eliminar imagen
+            //Si se marcó eliminar imagen
             if (($validated['delete_image'] ?? null) === '1') {
                 if ($alumno->fotografia && file_exists(public_path($alumno->fotografia))) {
                     unlink(public_path($alumno->fotografia));
@@ -102,14 +108,14 @@ class AlumnoController extends Controller
                 $alumno->save();
             }
 
-            // Si se sube una nueva imagen
+            //Si se sube una nueva imagen
             if ($request->hasFile('image')) {
                 // Borramos la anterior si existe
                 if ($alumno->fotografia && file_exists(public_path($alumno->fotografia))) {
                     unlink(public_path($alumno->fotografia));
                 }
 
-                // Subimos la nueva
+                //Subimos la nueva
                 $path = $this->upload($request, $alumno->id);
                 $alumno->fotografia = $path;
                 $alumno->save();
@@ -138,9 +144,8 @@ class AlumnoController extends Controller
         }
     }
 
-    /**
-     * Servir la imagen privada del alumno
-     */
+    //Servir la imagen privada del alumno
+     
     public function image(Alumno $alumno)
     {
         if (!$alumno->fotografia || !Storage::disk('private')->exists($alumno->fotografia)) {
@@ -152,10 +157,8 @@ class AlumnoController extends Controller
     }
 
 
-    /**
-     * Sube la imagen al disco 'private' y devuelve la ruta relativa
-     * p.ej. alumnos/5.jpg
-     */
+    //Sube la imagen al disco 'private' y devuelve la ruta relativa
+
     private function upload(Request $request, int $alumnoId): ?string
     {
         if (!$request->hasFile('image')) {
