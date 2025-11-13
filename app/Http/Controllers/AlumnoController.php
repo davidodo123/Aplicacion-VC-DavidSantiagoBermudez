@@ -119,6 +119,19 @@ class AlumnoController extends Controller
     //El metodo desttroy para eliminar ese curriculmu
     public function destroy(Alumno $alumno): RedirectResponse
     {
+        $data = $request->validate([
+            'nombre'            => 'required|string|max:50',
+            'apellidos'         => 'required|string|max:100',
+            'telefono'          => 'required|string|max:20',
+            'correo'            => 'required|email|max:100|unique:alumnos,correo,' . $alumno->id,
+            'fecha_nacimiento'  => 'required|date',
+            'nota_media'        => 'required|numeric|min:0|max:10',
+            'experiencia'       => 'nullable|string',
+            'formacion'         => 'nullable|string',
+            'habilidades'       => 'nullable|string',
+            'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'delete_image'      => 'nullable|in:1',
+        ]);
         try {
             if ($alumno->fotografia && Storage::disk('private')->exists($alumno->fotografia)) {
                 Storage::disk('private')->delete($alumno->fotografia);
